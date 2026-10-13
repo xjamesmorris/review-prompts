@@ -15,6 +15,18 @@ Where `<agent>` is one of available agents and `<project>` is one of available
 projects that are explicitly stated in the usage message when the script is
 executed with `-h|--help` option.
 
+### GitHub Copilot CLI
+
+Copilot CLI has no slash-command files, so `./setup.sh copilot <project>`
+installs the project skill and each slash command as a skill under
+`${COPILOT_HOME:-~/.copilot}/skills/`.  Invoke them as usual, e.g. `/kreview`,
+and run `/skills reload` in a session that was already open.
+
+Copilot asks before reading files outside the working directory.  To allow the
+prompts up front, start it with `copilot --add-dir <path-to-review-prompts>`
+or use `/add-dir` in the session.  To use semcode, register its MCP server once
+with `copilot mcp add semcode -- semcode-mcp`.
+
 ## Available Commands
 
 | Project | Review | Debug | Verify |
