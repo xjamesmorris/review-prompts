@@ -1,6 +1,7 @@
 # Review Scripts Documentation
 
-These scripts automate the process of reviewing a series of git commits using Claude.
+These scripts automate the process of reviewing a series of git commits using
+Claude Code or GitHub Copilot CLI.
 
 ## Scripts Overview
 
@@ -145,7 +146,8 @@ This script is designed to be called by the context-analyzer agent (see `kernel/
 
 ## review_one.sh
 
-Reviews a single git commit by setting up a worktree and running Claude's review.
+Reviews a single git commit by setting up a worktree and running a review with
+Claude Code (the default) or GitHub Copilot CLI.
 
 ### Usage
 
@@ -161,18 +163,21 @@ review_one.sh [options] <sha>
 | `--prompt <file>` | Path to the review prompt file | `<script_dir>/../review-core.md` |
 | `--series <sha>` | SHA of the last commit in the series (optional) | - |
 | `--working-dir <dir>` | Directory where worktrees are created | Current directory or `$WORKING_DIR` |
-| `--model <model>` | Claude model to use | `sonnet` or `$CLAUDE_MODEL` |
+| `--cli <cli>` | CLI to run: `claude` or `copilot` | `claude` |
+| `--model <model>` | Model to use | `$CLAUDE_MODEL`, else `opus` (claude) or copilot's configured model, e.g. `$COPILOT_MODEL` (copilot) |
 
 ### What it does
 
 1. Creates a git worktree at `linux.<sha>` for the specified commit
 2. If the base linux directory has `.semcode.db`, hard-links it into the worktree and configures MCP
-3. Runs Claude with the review prompt
+3. Runs the selected CLI with the review prompt
 4. Outputs results to:
-   - `review.json` - Raw Claude output (stream-json format)
-   - `review.md` - Parsed markdown review
+   - `review.json` - Raw Claude output (stream-json format, claude only)
+   - `review.out` - Copilot's text output (copilot only)
+   - `review.md` - Markdown review (parsed from `review.json` for claude, the
+     session transcript for copilot)
    - `review.duration.txt` - Elapsed time
-5. Retries up to 5 times if Claude exits without output
+5. Retries up to 5 times if the CLI exits without output
 
 ### Directory Structure Assumptions
 
@@ -192,6 +197,7 @@ Where `$SCRIPT_DIR` is the directory containing `review_one.sh`.
   cd linux && semcode-index -s . --git base..last_sha
   ```
 - `semcode-mcp` must be in your PATH if using semcode integration
+- The `claude` or `copilot` CLI must be installed and logged in
 
 ---
 
@@ -227,6 +233,9 @@ claude_xargs.py -c <command> -f <sha_file> [options]
 
 ```bash
 /path/claude_xargs.py -n 5 -f shas.txt -c '/path/review_one.sh'
+
+# The same with GitHub Copilot CLI
+/path/claude_xargs.py -n 5 -f shas.txt -c '/path/review_one.sh --cli copilot'
 ```
 
 ---

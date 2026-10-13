@@ -17,9 +17,10 @@ usage() {
     echo "  --series: optional SHA of the last commit in the series"
     echo "  --range: optional git range base..last_sha"
     echo "  --working-dir: working directory (default: current directory or WORKING_DIR env)"
-    echo "  --model: Claude model to use (default: sonnet or CLAUDE_MODEL env)"
+    echo "  --model: model to use (default: CLAUDE_MODEL env, else opus for claude;"
+    echo "           copilot uses its own default, e.g. COPILOT_MODEL)"
     echo "  --append: string to append to the prompt (e.g., for enabling pedantic mode)"
-    echo "  --cli: which CLI to use (default: claude)"
+    echo "  --cli: which CLI to use: claude or copilot (default: claude)"
     echo "  --help: show this help message"
 }
 
@@ -161,6 +162,8 @@ nowstr=$(date +"%Y-%m-%d-%H:%M")
 
 # Clean up old review files
 rm -f review.json
+rm -f review.md
+rm -f review.out
 rm -f check.md
 rm -f check.json
 rm -f review.duration.txt
@@ -238,13 +241,14 @@ set_copilot_opts() {
 		MCP_ARGS+=" --allow-tool 'semcode'"
 	fi
 
-	if [ -z "$CLAUDE_MODEL" ]; then
-		CLAUDE_MODEL="claude-opus-4.5"
-	fi
+	# Without --model, copilot uses COPILOT_MODEL or its configured default.
 
 	CLI_OPTS="--log-level all"
 	CLI_OPTS+=" --add-dir /tmp"
 	CLI_OPTS+=" --add-dir $WORKING_DIR"
+	CLI_OPTS+=" --add-dir $SCRIPT_DIR/.."
+	# Save the session transcript, like claude-json.py does for claude
+	CLI_OPTS+=" --share=review.md"
 
 	# Need this for output redirection. Can we reduce this?
 	CLI_OPTS+=" --allow-all-tools"
@@ -270,7 +274,9 @@ esac
 FULL_CMD="$CLI"
 FULL_CMD+=" -p '$PROMPT'"
 FULL_CMD+=" $MCP_ARGS"
-FULL_CMD+=" --model $CLAUDE_MODEL"
+if [ -n "$CLAUDE_MODEL" ]; then
+    FULL_CMD+=" --model $CLAUDE_MODEL"
+fi
 FULL_CMD+=" $CLI_OPTS"
 FULL_CMD+=" $CLI_OUT"
 #echo "Would run: $FULL_CMD"
